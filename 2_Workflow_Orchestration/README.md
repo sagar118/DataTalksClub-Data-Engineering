@@ -8,6 +8,8 @@ In week 2:
 
 Note: You can interact with your Prefect runs using GUI with `prefect orion start`. Prefect orion is second-generation workflow engine. To look at our Prefect runs go to `http://localhost:4200`
 
+Week 2 Course [link](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/week_2_workflow_orchestration)
+
 ## Create Environment
 Create a new environments and install requirements for this week: 
 - `conda create -p venv python=3.9 -y`
@@ -59,3 +61,9 @@ More:
     - `prefect deployment build ./2_Workflow_Orchestration/02_gcp/etl_web_to_gcs.py:etl_parent_flow -n "Parameterized ETL" --cron "0 0 * * *" -a`
   - To view work queue present (By default we have `default` work queue): `prefect profile ls`
 
+Recommended links:
+  - [Prefect docs](https://docs.prefect.io/)
+  - [Prefect Discourse](https://discourse.prefect.io/)
+  - [Prefect Cloud](https://app.prefect.cloud/)
+  - [Prefect Slack](https://prefect-community.slack.com/)
+  - [Anna Geller GitHub](https://github.com/anna-geller)
