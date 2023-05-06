@@ -17,9 +17,19 @@ Week 1 covers the following topics:
   - Setting up infrastructure on GCP with Terraform
   - Preparing the environment for the course
   - Homework
-  
-## Tech Stack (up-until week 1):
+
+## Week 2: Workflow Orchestration
+Week 2 covers the following topics:
+  - Introduction to Prefect
+  - ETL with GCP & Prefect
+  - From Google Cloud Storage to Big Query
+  - Parametrizing Flow & Deployments
+  - Schedules & Docker Storage with Infrastructure
+  - Prefect Cloud and Additional Resources
+
+## Tech Stack (up-until week 2):
 - Docker
-- Google Cloud Platform (GCP)
+- Google Cloud Platform (GCP): Google Cloud Storage and Google BigQuery
 - Postgres
 - Terraform
+- Prefect
