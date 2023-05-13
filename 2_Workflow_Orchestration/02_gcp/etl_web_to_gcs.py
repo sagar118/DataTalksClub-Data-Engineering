@@ -14,11 +14,15 @@ def fetch(url: str) -> pd.DataFrame:
     return df
 
 @task(log_prints=True)
-def clean(df: pd.DataFrame) -> pd.DataFrame:
+def clean(df: pd.DataFrame, color: str) -> pd.DataFrame:
     """Fix dtype issues"""
 
-    df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
-    df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+    if color == "yellow":
+        df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+        df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+    elif color == "green":
+        df['lpep_pickup_datetime'] = pd.to_datetime(df['lpep_pickup_datetime'])
+        df['lpep_dropoff_datetime'] = pd.to_datetime(df['lpep_dropoff_datetime'])
     return df
 
 @task(log_prints=True)
@@ -41,31 +45,36 @@ def write_gcs(path: Path) -> None:
     return
 
 @flow(name="ETL Web to GCS", log_prints=True)
-def etl_web_to_gcs(params, month) -> None:
+def etl_web_to_gcs(color, year, month) -> None:
     """The main ETL Function"""
     
     print(f"Loading data for month: {month:0>2}")
 
-    dataset_file = f"{params.color}_tripdata_{params.year}-{month:0>2}"
-    url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{params.color}/{dataset_file}.csv.gz"
+    dataset_file = f"{color}_tripdata_{year}-{month:0>2}"
+    url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
 
     df = fetch(url)
-    df_clean = clean(df)
-    path = write_local(df_clean, params.color, dataset_file)
+    df_clean = clean(df, color)
+    path = write_local(df_clean, color, dataset_file)
     write_gcs(path)
 
-@flow(name="Web-GCS Parent Flow")
+@flow(name="Web-GCS Parent Flow", log_prints=True)
 def etl_parent_flow(params):
 
-    for month in params.months:
-        # etl_web_to_gcs(params, month)
-        print(month)
+    for color in params.color:
+        print(f"Working on {color}", sep=" ")
+        for year in params.year:
+            print(f"for the year {year}")
+            for month in params.months:
+                print(f"Month: {month}")
+                etl_web_to_gcs(color, year, month)
+        # print(month)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Params for ETL from web to GCS")
 
-    parser.add_argument("--color", required=True, help="Taxi color")
-    parser.add_argument("--year", required=True, help="Data from year")
+    parser.add_argument("--color", nargs="+", required=True, help="Taxi color")
+    parser.add_argument("--year", nargs="+", required=True, help="Data from year")
     parser.add_argument("--months", nargs="+", required=True, help="Data from months")
 
     args = parser.parse_args()

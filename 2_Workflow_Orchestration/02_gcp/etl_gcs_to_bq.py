@@ -15,10 +15,10 @@ def extract_from_gcs(color: str, year: int, month: int) -> Path:
     gcs_block = GcsBucket.load('dtc-de-gcs')
     gcs_block.download_object_to_path(
         from_path=gcs_path, 
-        to_path=f"./data/gcs/{color}_tripdata_{year}-{month:0>2}.parquet"
+        to_path=f"./data/gcs/{color}/{color}_tripdata_{year}-{month:0>2}.parquet"
     )
     
-    return Path(f"./data/gcs/{color}_tripdata_{year}-{month:0>2}.parquet")
+    return Path(f"./data/gcs/{color}/{color}_tripdata_{year}-{month:0>2}.parquet")
 
 @task(log_prints=True)
 def transform(path: Path) -> pd.DataFrame:
@@ -32,13 +32,13 @@ def transform(path: Path) -> pd.DataFrame:
     return df
 
 @task(log_prints=True)
-def write_dq(df: pd.DataFrame) -> None:
+def write_dq(df: pd.DataFrame, table_name) -> None:
     """Write DataFrame to BigQuery"""
 
     gcp_cred_block = GcpCredentials.load("dtc-de-gcp-creds")
 
     df.to_gbq(
-        destination_table = "trips_data_all.taxi_rides",
+        destination_table = f"trips_data.{table_name}",
         project_id = "teak-alloy-385319",
         credentials = gcp_cred_block.get_credentials_from_service_account(),
         chunksize = 500_000,
@@ -49,17 +49,20 @@ def write_dq(df: pd.DataFrame) -> None:
 def etl_gcs_to_bq(params):
     """Main ETL Flow to load data into BigQuery"""
 
-    path = extract_from_gcs(params.color, params.year, params.month)
-    df = transform(path)
-    write_dq(df)
+    for year in params.year:
+        for month in params.month:
+            path = extract_from_gcs(params.color, year, month)
+            df = transform(path)
+            write_dq(df, params.table_name)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Params for ETL from web to GCS")
 
     parser.add_argument("--color", required=True, help="Taxi color")
-    parser.add_argument("--year", required=True, help="Data from year")
-    parser.add_argument("--month", required=True, help="Data from month")
+    parser.add_argument("--year", nargs="+", required=True, help="Data from year")
+    parser.add_argument("--month", nargs="+", required=True, help="Data from month")
+    parser.add_argument("--table_name", required=True, help="Table to store data in BQ")
 
     args = parser.parse_args()
 
